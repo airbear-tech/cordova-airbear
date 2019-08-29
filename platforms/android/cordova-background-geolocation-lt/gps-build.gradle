@@ -1,0 +1,14 @@
+repositories{
+  jcenter()
+  // Google dependencies are now hosted at Maven
+  maven {
+    url 'https://maven.google.com'
+  }
+  maven {
+    url '../app/libs'
+  }
+}
+
+dependencies {
+  implementation(group: 'com.transistorsoft', name:'tslocationmanager', version: '+')
+}

@@ -1,0 +1,52 @@
+<?xml version='1.0' encoding='utf-8'?>
+<widget id="org.camemergency.gps" version="1.0.0" xmlns="http://www.w3.org/ns/widgets" xmlns:android="http://schemas.android.com/apk/res/android" xmlns:cdv="http://cordova.apache.org/ns/1.0">
+    <feature name="Whitelist">
+        <param name="android-package" value="org.apache.cordova.whitelist.WhitelistPlugin" />
+        <param name="onload" value="true" />
+    </feature>
+    <feature name="Geolocation">
+        <param name="android-package" value="org.apache.cordova.geolocation.Geolocation" />
+    </feature>
+    <feature name="Device">
+        <param name="android-package" value="org.apache.cordova.device.Device" />
+    </feature>
+    <feature name="BackgroundMode">
+        <param name="android-package" value="de.appplant.cordova.plugin.background.BackgroundMode" />
+    </feature>
+    <feature name="BackgroundModeExt">
+        <param name="android-package" value="de.appplant.cordova.plugin.background.BackgroundModeExt" />
+    </feature>
+    <feature name="Serial">
+        <param name="android-package" value="fr.drangies.cordova.serial.Serial" />
+    </feature>
+    <feature name="BackgroundTimer">
+        <param name="android-package" value="com.skycom.cordova.bgt.BackgroundTimer" />
+    </feature>
+    <feature name="bringtofront">
+        <param name="android-package" value="in.lucasdup.bringtofront.BringToFront" />
+    </feature>
+    <feature name="BackgroundFetch">
+        <param name="android-package" value="com.transistorsoft.cordova.backgroundfetch.CDVBackgroundFetch" />
+    </feature>
+    <feature name="BackgroundGeolocation">
+        <param name="android-package" value="com.transistorsoft.cordova.bggeo.CDVBackgroundGeolocation" />
+    </feature>
+    <name>HelloWorld</name>
+    <description>
+        A sample Apache Cordova application that responds to the deviceready event.
+    </description>
+    <author email="dev@cordova.apache.org" href="http://cordova.io">
+        Apache Cordova Team
+    </author>
+    <content src="index.html" />
+    <access origin="*" />
+    <allow-intent href="http://*/*" />
+    <allow-intent href="https://*/*" />
+    <allow-intent href="tel:*" />
+    <allow-intent href="sms:*" />
+    <allow-intent href="mailto:*" />
+    <allow-intent href="geo:*" />
+    <allow-intent href="market:*" />
+    <preference name="loglevel" value="DEBUG" />
+    <preference name="KeepRunning" value="true" />
+</widget>

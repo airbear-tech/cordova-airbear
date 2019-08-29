@@ -1,0 +1,40 @@
+{
+  "prepare_queue": {
+    "installed": [],
+    "uninstalled": []
+  },
+  "config_munge": {
+    "files": {}
+  },
+  "installed_plugins": {
+    "cordova-background-geolocation-lt": {
+      "PACKAGE_NAME": "HelloWorld"
+    },
+    "cordova-background-timer": {
+      "PACKAGE_NAME": "HelloWorld"
+    },
+    "cordova-plugin-background-mode": {
+      "PACKAGE_NAME": "HelloWorld"
+    },
+    "cordova-plugin-geolocation": {
+      "PACKAGE_NAME": "HelloWorld"
+    },
+    "cordova-plugin-whitelist": {
+      "PACKAGE_NAME": "HelloWorld"
+    },
+    "cordovarduino": {
+      "PACKAGE_NAME": "HelloWorld"
+    },
+    "in.lucasdup.bringtofront": {
+      "PACKAGE_NAME": "HelloWorld"
+    }
+  },
+  "dependent_plugins": {
+    "cordova-plugin-background-fetch": {
+      "PACKAGE_NAME": "HelloWorld"
+    },
+    "cordova-plugin-device": {
+      "PACKAGE_NAME": "HelloWorld"
+    }
+  }
+}
