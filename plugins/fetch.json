@@ -55,10 +55,18 @@
     "is_top_level": true,
     "variables": {}
   },
+  "cordova-plugin-background-fetch": {
+    "source": {
+      "type": "registry",
+      "id": "cordova-plugin-background-fetch@~5.5.0"
+    },
+    "is_top_level": false,
+    "variables": {}
+  },
   "cordova-background-geolocation-lt": {
     "source": {
       "type": "registry",
-      "id": "cordova-background-geolocation-lt@3.2.0"
+      "id": "https://github.com/transistorsoft/cordova-background-geolocation-lt.git"
     },
     "is_top_level": true,
     "variables": {
@@ -67,13 +75,5 @@
       "OKHTTP_VERSION": "3.12.+",
       "EVENTBUS_VERSION": "3.0.0"
     }
-  },
-  "cordova-plugin-background-fetch": {
-    "source": {
-      "type": "registry",
-      "id": "cordova-plugin-background-fetch@~5.5.0"
-    },
-    "is_top_level": false,
-    "variables": {}
   }
 }

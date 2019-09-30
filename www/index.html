@@ -41,21 +41,25 @@
             <h1>Air Bear</h1>
 
 <div id="status"></div>
-PM1.0: <span id="data-pm1"></span>
-PM2.5: <span id="data-pm2"></span>
-PM10: <span id="data-pm10"></span>
+Location: <span id="location">-</span>
 <br/>   
-PM1 Atmospheric conc:<span id="data-conc-pm1"></span><br/>
-PM2.5 Atmospheric conc:<span id="data-conc-pm2"></span><br/>
-PM10 Atmospheric conc:<span id="data-conc-pm10"></span><br/>
-Count 0.3um: <span id="data-count-003"></span>
-Count 0.5um: <span id="data-count-005"></span><br/>
-Count 1.0um: <span id="data-count-010"></span> 
-Count 2.5um: <span id="data-count-025"></span><br/> 
-Count 5.0um: <span id="data-count-050"></span>
-Count 10um: <span id="data-count-100"></span>
+CO2: <span id="data-co2">-</span>
+<br/>   
+PM1.0: <span id="data-pm1">-</span>
+PM2.5: <span id="data-pm2">-</span>
+PM10: <span id="data-pm10">-</span>
+<br/>   
+PM1 Atmospheric conc:<span id="data-conc-pm1">-</span><br/>
+PM2.5 Atmospheric conc:<span id="data-conc-pm2">-</span><br/>
+PM10 Atmospheric conc:<span id="data-conc-pm10">-</span><br/>
+Count 0.3um: <span id="data-count-003">-</span>
+Count 0.5um: <span id="data-count-005">-</span><br/>
+Count 1.0um: <span id="data-count-010">-</span> 
+Count 2.5um: <span id="data-count-025">-</span><br/> 
+Count 5.0um: <span id="data-count-050">-</span>
+Count 10um: <span id="data-count-100">-</span>
 <br/>
-Persistent storage size: <span id="datastore-size"></span>
+Persistent storage size: <span id="datastore-size">-</span>
 
             <div id="deviceready" class="blink">
                 <p class="event listening">Connecting to Device</p>
@@ -69,6 +73,8 @@ Persistent storage size: <span id="datastore-size"></span>
         <script type="text/javascript" src="js/mqtt.min.js"></script>
         <script type="text/javascript" src="js/localforage.js"></script>
         <script type="text/javascript" src="js/mqtt-localforage-store.min.js"></script>
+        <script type="text/javascript" src="js/usbdriver-mhz19b.js"></script>        
+        <script type="text/javascript" src="js/usbdriver-scd30.js"></script>        
         <script type="text/javascript" src="js/index.js"></script>
     </body>
 </html>

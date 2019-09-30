@@ -1,27 +1,24 @@
 {
-  "_from": "cordova-background-geolocation-lt@3.2.0",
+  "_from": "git+https://github.com/transistorsoft/cordova-background-geolocation-lt.git",
   "_id": "cordova-background-geolocation-lt@3.2.0",
   "_inBundle": false,
-  "_integrity": "sha512-74Y11dkXxkMft0ziSEzBvlh6Tof1dRrPtzNidKNMNkdGCY4liooUemcirGLVJ1HH6yhqnxoRHGjcdEz8OWRAtQ==",
+  "_integrity": "",
   "_location": "/cordova-background-geolocation-lt",
   "_phantomChildren": {},
   "_requested": {
-    "type": "version",
-    "registry": true,
-    "raw": "cordova-background-geolocation-lt@3.2.0",
-    "name": "cordova-background-geolocation-lt",
-    "escapedName": "cordova-background-geolocation-lt",
-    "rawSpec": "3.2.0",
-    "saveSpec": null,
-    "fetchSpec": "3.2.0"
+    "type": "git",
+    "raw": "https://github.com/transistorsoft/cordova-background-geolocation-lt.git",
+    "rawSpec": "https://github.com/transistorsoft/cordova-background-geolocation-lt.git",
+    "saveSpec": "git+https://github.com/transistorsoft/cordova-background-geolocation-lt.git",
+    "fetchSpec": "https://github.com/transistorsoft/cordova-background-geolocation-lt.git",
+    "gitCommittish": null
   },
   "_requiredBy": [
     "#USER",
     "/"
   ],
-  "_resolved": "https://registry.npmjs.org/cordova-background-geolocation-lt/-/cordova-background-geolocation-lt-3.2.0.tgz",
-  "_shasum": "6f8860ed3355aa6c4f575f0a10a0431d3e670584",
-  "_spec": "cordova-background-geolocation-lt@3.2.0",
+  "_resolved": "git+https://github.com/transistorsoft/cordova-background-geolocation-lt.git#9ecd5b77f2787a700769064244f17eaa112aa23f",
+  "_spec": "https://github.com/transistorsoft/cordova-background-geolocation-lt.git",
   "_where": "/Users/stefanhaselwimmer/Projects/CamEmergency/cordova/gps",
   "author": {
     "name": "Chris Scott, Transistor Software"

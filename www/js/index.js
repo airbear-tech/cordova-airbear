@@ -19,6 +19,7 @@
 
 var serialPort = new Uint8Array();
 var sensorValue = 'undefined';
+var sessiontoken = 789014;
 
 var mqttClient;
 var mqttAddress = 'ws://analytics.camemergency.org:9001';
@@ -36,7 +37,8 @@ window.onerror = function(msg, url, line)
 
 function showStatus(status)
 {
-    document.getElementById('status').innerHTML = status;
+    var d = new Date();    
+    document.getElementById('status').innerHTML = d.toLocaleString('en-GB') + ": " + status;
     console.log(status);
 }
 
@@ -47,12 +49,6 @@ var app = {
         // Set up overarching mqtt connection
 
         mqttClient = mqtt.connect(mqttAddress, {outgoingStore: outgoingStore}); 
-        mqttClient.subscribe("sensor");
-
-        // mqttClient.on("message", function (topic, payload) {
-        //     console.log("MQTT: " + [topic, payload].join(": "))
-        //     // mqttClient.end()
-        // });
 
         document.addEventListener('deviceready', this.onDeviceReady.bind(this), false);
     },
@@ -82,25 +78,67 @@ var app = {
         // Start serial port monitoring and register callback
         // making sure serial port doesn't 'sleepOnPause', ie. background
 
+        // Serial access for PMS7003
+
+        // serial.requestPermission(
+        //     function(successMessage) {
+        //         showStatus("Permission allowed to use serial");
+        //         serial.open(
+        //             {baudRate: 9600, sleepOnPause: false},
+        //             function(successMessage) {
+
+        //                 showStatus("Serial connection open");
+
+        //                 serial.registerReadCallback(
+        //                     function success(rawdata){
+
+        //                         var data = new Uint8Array(rawdata);
+
+        //                         processSerialPort(data);
+
+        //                     },
+        //                     errorCallback
+        //                 );
+        //             },
+        //             errorCallback
+        //         );
+        //     },
+        //     errorCallback
+        // );
+
+        // // Serial access for MH-Z19B
+
+        // serial.requestPermission(
+        //     function(successMessage) {
+        //         showStatus("Permission allowed to use serial");
+        //         serial.open(
+        //             {baudRate: 9600, sleepOnPause: false},
+        //             function(successMessage) {
+
+        //                 showStatus("Serial connection open");
+
+        //                 var co2device = new mhz19b(serial, "sensorValue");
+        //                 co2device.cordova_read();
+        //             },
+        //             errorCallback
+        //         );
+        //     },
+        //     errorCallback
+        // );
+
+        // Serial access for SCD30
+
         serial.requestPermission(
             function(successMessage) {
                 showStatus("Permission allowed to use serial");
                 serial.open(
-                    {baudRate: 9600, sleepOnPause: false},
+                    {baudRate: 19200, sleepOnPause: false},
                     function(successMessage) {
 
                         showStatus("Serial connection open");
 
-                        serial.registerReadCallback(
-                            function success(rawdata){
-
-                                var data = new Uint8Array(rawdata);
-
-                                processSerialPort(data);
-
-                            },
-                            errorCallback
-                        );
+                        var co2device = new scd30(serial, "sensorValue");
+                        co2device.cordova_read();
                     },
                     errorCallback
                 );
@@ -116,21 +154,27 @@ var app = {
         var bgGeo = window.BackgroundGeolocation;
 
         bgGeo.onLocation(function(location) {
+            showStatus("BKGNDGEO: onLocation")
             outputDebug('[location] ' + JSON.stringify(location));
             console.log(location);
             currentposition = {'latitude': location.coords.latitude, 'longitude': location.coords.longitude};
+            showCurrentPosition('bkgndgeo_onlocation');
         });
 
         bgGeo.onMotionChange(function(event) {
+            showStatus("BKGNDGEO: onMotionChange")
             outputDebug('[motionchange] ' + JSON.stringify(event));
             currentposition = {'latitude': event.location.coords.latitude, 'longitude': event.location.coords.longitude};
+            showCurrentPosition('bkgndgeo_onmotionchange');
         });
 
         bgGeo.onHttp(function(response) {
+            showCurrentPosition('bkgndgeo_onhttp');
             outputDebug('[http]');
         });
 
         bgGeo.onProviderChange(function(event) {
+            showCurrentPosition('bkgndgeo_onproviderchange');
             outputDebug('[providerchange]');
         });
 
@@ -150,6 +194,7 @@ var app = {
             outputDebug('BackgroundGeolocation is configured and ready to use');
             if (!state.enabled) {
               bgGeo.start().then(function() {
+                showCurrentPosition('bkgndgeo_onready');
                 outputDebug('- BackgroundGeolocation tracking started');
               });
             }
@@ -174,19 +219,35 @@ var app = {
 
 app.initialize();
 
+function showCurrentPosition(source)
+{
+    var d = new Date();    
+    var prefix = d.toLocaleString('en-GB') + ": " + source + ": ";
+
+    if (currentposition !== 'undefined')
+    {
+        document.getElementById('location').innerHTML = prefix + currentposition.latitude.toString() + ", " + currentposition.longitude.toString();
+    }
+    else
+    {
+        document.getElementById('location').innerHTML = prefix + 'undefined';
+    }
+}
 
 function timerLog()
 {
-    console.log('timerLog');
-    outputDebug(JSON.stringify({'type': 'timer', 'message': 'Calling timerLog'}));            
+    // console.log('timerLog');
+    // outputDebug(JSON.stringify({'type': 'timer', 'message': 'Calling timerLog'}));            
 
     localforage.length().then(function(numberOfKeys) {
         document.getElementById('datastore-size').innerHTML = numberOfKeys.toString();
-        console.log("Datastore size: " + numberOfKeys.toString());
+        // console.log("Datastore size: " + numberOfKeys.toString());
 
     }).catch(function(err) {
         outputDebug(JSON.stringify(err));
     });
+
+    // showCurrentPosition('timerLog');
 
     if (currentposition !== 'undefined')
     {
@@ -327,6 +388,7 @@ function processPayload(currenttimestamp, data)
 
     sensorValue = 
     {
+        'device':           'pms7003',
         'concPM1_0_CF1':    concPM1_0_CF1,
         'concPM2_5_CF1':    concPM2_5_CF1,
         'concPM10_0_CF1':   concPM10_0_CF1,
@@ -346,116 +408,215 @@ var onGeolocationSuccess = function(location) {
 
     currentposition = {'latitude': location.coords.latitude, 'longitude': location.coords.longitude};
 
+    showCurrentPosition('builtingeo');
+
     // publishGeoData(currentposition);
 }
 
 var publishGeoData = function(latlon) {
 
-    successArray = {'type': 'geolocation', 'message': 'success', 'latitude': latlon.latitude, 'longitude': latlon.longitude};
-    outputDebug(JSON.stringify(successArray));
+    // successArray = {'type': 'geolocation', 'message': 'success', 'latitude': latlon.latitude, 'longitude': latlon.longitude};
+    // outputDebug(JSON.stringify(successArray));
 
     if (sensorValue === 'undefined') return;
 
-    mqttClient.publish("sensor", JSON.stringify({
-        'token': 789014,
-        'device':'mobile', 
-        'sensor':'pms7003-concPM1_0_CF1',
-        'value':sensorValue.concPM1_0_CF1, 
-        'epoch':sensorValue.timestamp, 
-        'latitude':latlon.latitude, 
-        'longitude':latlon.longitude}));
+    if (typeof sensorValue.co2 !== 'undefined')
+    {
+        mqttClient.publish("sensor", JSON.stringify(
+        {
+            'token': sessiontoken,
+            'device': sensorValue.device, 
+            'sensor':'CO2',
+            'value':sensorValue.co2, 
+            'epoch':sensorValue.timestamp, 
+            'latitude':latlon.latitude, 
+            'longitude':latlon.longitude
+        }));
+    }
 
-    mqttClient.publish("sensor", JSON.stringify({
-        'token': 789014,
-        'device':'mobile', 
-        'sensor':'pms7003-concPM2_5_CF1',
-        'value':sensorValue.concPM2_5_CF1, 
-        'epoch':sensorValue.timestamp, 
-        'latitude':latlon.latitude, 
-        'longitude':latlon.longitude}));
+    if (typeof sensorValue.temperature !== 'undefined')
+    {    
+        mqttClient.publish("sensor", JSON.stringify(
+        {
+            'token': sessiontoken,
+            'device': sensorValue.device, 
+            'sensor':'Temperature',
+            'value':sensorValue.temperature, 
+            'epoch':sensorValue.timestamp, 
+            'latitude':latlon.latitude, 
+            'longitude':latlon.longitude
+        }));
+    }
 
-    mqttClient.publish("sensor", JSON.stringify({
-        'token': 789014,
-        'device':'mobile', 
-        'sensor':'pms7003-concPM10_0_CF1',
-        'value':sensorValue.concPM10_0_CF1, 
-        'epoch':sensorValue.timestamp, 
-        'latitude':latlon.latitude, 
-        'longitude':latlon.longitude}));
+    if (typeof sensorValue.humidity !== 'undefined')
+    {    
+        mqttClient.publish("sensor", JSON.stringify(
+        {
+            'token': sessiontoken,
+            'device': sensorValue.device, 
+            'sensor':'Humidity',
+            'value':sensorValue.humidity, 
+            'epoch':sensorValue.timestamp, 
+            'latitude':latlon.latitude, 
+            'longitude':latlon.longitude
+        }));                    
+    }
 
-    mqttClient.publish("sensor", JSON.stringify({
-        'token': 789014,
-        'device':'mobile', 
-        'sensor':'pms7003-concPM1_0_ATM',
-        'value':sensorValue.concPM1_0_ATM, 
-        'epoch':sensorValue.timestamp, 
-        'latitude':latlon.latitude, 
-        'longitude':latlon.longitude}));
+    if (typeof sensorValue.concPM1_0_CF1 !== 'undefined')
+    {
+        mqttClient.publish("sensor", JSON.stringify(
+        {
+            'token': sessiontoken,
+            'device': sensorValue.device, 
+            'sensor': 'concPM1_0_CF1',
+            'value':sensorValue.concPM1_0_CF1, 
+            'epoch':sensorValue.timestamp, 
+            'latitude':latlon.latitude, 
+            'longitude':latlon.longitude
+        }));
+    }
 
-    mqttClient.publish("sensor", JSON.stringify({
-        'token': 789014,
-        'device':'mobile', 
-        'sensor':'pms7003-concPM2_5_ATM',
-        'value':sensorValue.concPM2_5_ATM, 
-        'epoch':sensorValue.timestamp, 
-        'latitude':latlon.latitude, 
-        'longitude':latlon.longitude}));
+    if (typeof sensorValue.concPM2_5_CF1 !== 'undefined')
+    {
+        mqttClient.publish("sensor", JSON.stringify(
+        {
+            'token': sessiontoken,
+            'device':'pms7003', 
+            'sensor':'concPM2_5_CF1',
+            'value':sensorValue.concPM2_5_CF1, 
+            'epoch':sensorValue.timestamp, 
+            'latitude':latlon.latitude, 
+            'longitude':latlon.longitude
+        }));
+    }
 
-    mqttClient.publish("sensor", JSON.stringify({
-        'token': 789014,
-        'device':'mobile', 
-        'sensor':'pms7003-concPM10_0_ATM',
-        'value':sensorValue.concPM10_0_ATM, 
-        'epoch':sensorValue.timestamp, 
-        'latitude':latlon.latitude, 
-        'longitude':latlon.longitude}));
+    if (typeof sensorValue.concPM10_0_CF1 !== 'undefined')
+    {
+        mqttClient.publish("sensor", JSON.stringify(
+        {
+            'token': sessiontoken,
+            'device':'pms7003', 
+            'sensor':'concPM10_0_CF1',
+            'value':sensorValue.concPM10_0_CF1, 
+            'epoch':sensorValue.timestamp, 
+            'latitude':latlon.latitude, 
+            'longitude':latlon.longitude
+        }));
+    }
 
-    mqttClient.publish("sensor", JSON.stringify({
-        'token': 789014,
-        'device':'mobile', 
-        'sensor':'pms7003-rawGt0_3um',
-        'value':sensorValue.rawGt0_3um, 
-        'epoch':sensorValue.timestamp, 
-        'latitude':latlon.latitude, 
-        'longitude':latlon.longitude}));
+    if (typeof sensorValue.concPM1_0_ATM !== 'undefined')
+    {
+        mqttClient.publish("sensor", JSON.stringify(
+        {
+            'token': sessiontoken,
+            'device':'pms7003', 
+            'sensor':'concPM1_0_ATM',
+            'value':sensorValue.concPM1_0_ATM, 
+            'epoch':sensorValue.timestamp, 
+            'latitude':latlon.latitude, 
+            'longitude':latlon.longitude
+        }));
+    }
 
-    mqttClient.publish("sensor", JSON.stringify({
-        'token': 789014,
-        'device':'mobile', 
-        'sensor':'pms7003-rawGt0_5um',
-        'value':sensorValue.rawGt0_5um, 
-        'epoch':sensorValue.timestamp, 
-        'latitude':latlon.latitude, 
-        'longitude':latlon.longitude}));
+    if (typeof sensorValue.concPM2_5_ATM !== 'undefined')
+    {
+        mqttClient.publish("sensor", JSON.stringify(
+        {
+            'token': sessiontoken,
+            'device':'pms7003', 
+            'sensor':'concPM2_5_ATM',
+            'value':sensorValue.concPM2_5_ATM, 
+            'epoch':sensorValue.timestamp, 
+            'latitude':latlon.latitude, 
+            'longitude':latlon.longitude
+        }));
+    }
 
-    mqttClient.publish("sensor", JSON.stringify({
-        'token': 789014,
-        'device':'mobile', 
-        'sensor':'pms7003-rawGt1_0um',
-        'value':sensorValue.rawGt1_0um, 
-        'epoch':sensorValue.timestamp, 
-        'latitude':latlon.latitude, 
-        'longitude':latlon.longitude}));
+    if (typeof sensorValue.concPM10_0_ATM !== 'undefined')
+    {
+        mqttClient.publish("sensor", JSON.stringify(
+        {
+            'token': sessiontoken,
+            'device':'pms7003', 
+            'sensor':'concPM10_0_ATM',
+            'value':sensorValue.concPM10_0_ATM, 
+            'epoch':sensorValue.timestamp, 
+            'latitude':latlon.latitude, 
+            'longitude':latlon.longitude
+        }));
+    }
 
-    mqttClient.publish("sensor", JSON.stringify({
-        'token': 789014,
-        'device':'mobile', 
-        'sensor':'pms7003-rawGt2_5um',
-        'value':sensorValue.rawGt2_5um, 
-        'epoch':sensorValue.timestamp, 
-        'latitude':latlon.latitude, 
-        'longitude':latlon.longitude}));
+    if (typeof sensorValue.rawGt0_3um !== 'undefined')
+    {
+        showStatus("Sensor value: " + sensorValue.rawGt0_3um.toString());
 
-    mqttClient.publish("sensor", JSON.stringify({
-        'token': 789014,
-        'device':'mobile', 
-        'sensor':'pms7003-rawGt10_0um',
-        'value':sensorValue.rawGt10_0um, 
-        'epoch':sensorValue.timestamp, 
-        'latitude':latlon.latitude, 
-        'longitude':latlon.longitude}));
+        mqttClient.publish("sensor", JSON.stringify(
+        {
+            'token': sessiontoken,
+            'device':'pms7003', 
+            'sensor':'rawGt0_3um',
+            'value':sensorValue.rawGt0_3um, 
+            'epoch':sensorValue.timestamp, 
+            'latitude':latlon.latitude, 
+            'longitude':latlon.longitude
+        }));
+    }
 
-    showStatus("Sensor value: " + sensorValue.rawGt0_3um.toString());
+    if (typeof sensorValue.rawGt0_5um !== 'undefined')
+    {
+        mqttClient.publish("sensor", JSON.stringify(
+        {
+            'token': sessiontoken,
+            'device':'pms7003', 
+            'sensor':'rawGt0_5um',
+            'value':sensorValue.rawGt0_5um, 
+            'epoch':sensorValue.timestamp, 
+            'latitude':latlon.latitude, 
+            'longitude':latlon.longitude
+        }));
+    }
+
+    if (typeof sensorValue.rawGt1_0um !== 'undefined')
+    {
+        mqttClient.publish("sensor", JSON.stringify(
+        {
+            'token': sessiontoken,
+            'device':'pms7003', 
+            'sensor':'rawGt1_0um',
+            'value':sensorValue.rawGt1_0um, 
+            'epoch':sensorValue.timestamp, 
+            'latitude':latlon.latitude, 
+            'longitude':latlon.longitude
+        }));
+    }
+
+    if (typeof sensorValue.rawGt2_5um !== 'undefined')
+    {
+        mqttClient.publish("sensor", JSON.stringify(
+        {
+            'token': sessiontoken,
+            'device':'pms7003', 
+            'sensor':'rawGt2_5um',
+            'value':sensorValue.rawGt2_5um, 
+            'epoch':sensorValue.timestamp, 
+            'latitude':latlon.latitude, 
+            'longitude':latlon.longitude
+        }));
+    }
+
+    if (typeof sensorValue.rawGt10_0um !== 'undefined')
+    {
+        mqttClient.publish("sensor", JSON.stringify(
+        {
+            'token': sessiontoken,
+            'device':'pms7003', 
+            'sensor':'rawGt10_0um',
+            'value':sensorValue.rawGt10_0um, 
+            'epoch':sensorValue.timestamp, 
+            'latitude':latlon.latitude, 
+            'longitude':latlon.longitude
+        }));
+    }
 
     sensorValue = 'undefined';
 };
@@ -484,6 +645,9 @@ function outputDebug(logtext)
 {
     // Add timestamp to text
 
+    // console.log(logtext);
+    // return;
+
     var d = new Date();
 
     timelogtext = 'DEBUG: ' + d.toLocaleString('en-GB') + ': ' + logtext;
@@ -506,7 +670,7 @@ function outputDebug(logtext)
         type: "GET",                
         data: 
         {
-            'token': 789014,
+            'token': sessiontoken,
             'logtext':logtext
         },
         success: function (msg)

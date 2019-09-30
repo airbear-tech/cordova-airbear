@@ -7,37 +7,37 @@
     "files": {}
   },
   "installed_plugins": {
-    "cordova-plugin-whitelist": {
-      "PACKAGE_NAME": "org.camemergency.gps"
-    },
-    "cordova-plugin-geolocation": {
-      "PACKAGE_NAME": "org.camemergency.gps"
-    },
-    "cordova-plugin-background-mode": {
-      "PACKAGE_NAME": "org.camemergency.gps"
-    },
-    "cordovarduino": {
-      "PACKAGE_NAME": "org.camemergency.gps"
-    },
-    "cordova-background-timer": {
-      "PACKAGE_NAME": "org.camemergency.gps"
-    },
-    "in.lucasdup.bringtofront": {
-      "PACKAGE_NAME": "org.camemergency.gps"
-    },
     "cordova-background-geolocation-lt": {
       "GOOGLE_API_VERSION": "16.+",
       "APPCOMPAT_VERSION": "28.+",
       "OKHTTP_VERSION": "3.12.+",
       "EVENTBUS_VERSION": "3.0.0",
       "PACKAGE_NAME": "org.camemergency.gps"
+    },
+    "cordova-background-timer": {
+      "PACKAGE_NAME": "org.camemergency.gps"
+    },
+    "cordova-plugin-background-mode": {
+      "PACKAGE_NAME": "org.camemergency.gps"
+    },
+    "cordova-plugin-geolocation": {
+      "PACKAGE_NAME": "org.camemergency.gps"
+    },
+    "cordova-plugin-whitelist": {
+      "PACKAGE_NAME": "org.camemergency.gps"
+    },
+    "cordovarduino": {
+      "PACKAGE_NAME": "org.camemergency.gps"
+    },
+    "in.lucasdup.bringtofront": {
+      "PACKAGE_NAME": "org.camemergency.gps"
     }
   },
   "dependent_plugins": {
-    "cordova-plugin-device": {
+    "cordova-plugin-background-fetch": {
       "PACKAGE_NAME": "org.camemergency.gps"
     },
-    "cordova-plugin-background-fetch": {
+    "cordova-plugin-device": {
       "PACKAGE_NAME": "org.camemergency.gps"
     }
   }

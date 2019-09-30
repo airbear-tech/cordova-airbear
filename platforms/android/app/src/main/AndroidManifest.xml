@@ -9,7 +9,12 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <service android:name="de.appplant.cordova.plugin.background.ForegroundService" />
+        <service android:exported="true" android:name="com.transistorsoft.cordova.backgroundfetch.HeadlessJobService" android:permission="android.permission.BIND_JOB_SERVICE" />
+        <receiver android:name="com.transistorsoft.cordova.backgroundfetch.HeadlessBroadcastReceiver">
+            <intent-filter>
+                <action android:name="${applicationId}.event.BACKGROUND_FETCH" />
+            </intent-filter>
+        </receiver>
         <service android:name="com.skycom.cordova.bgt.BackgroundTimerService" />
         <receiver android:enabled="true" android:exported="false" android:name="com.skycom.cordova.bgt.BootReceiver">
             <intent-filter>
@@ -17,17 +22,12 @@
             </intent-filter>
         </receiver>
         <receiver android:name="com.skycom.cordova.bgt.TimerEventReceiver" />
-        <service android:exported="true" android:name="com.transistorsoft.cordova.backgroundfetch.HeadlessJobService" android:permission="android.permission.BIND_JOB_SERVICE" />
-        <receiver android:name="com.transistorsoft.cordova.backgroundfetch.HeadlessBroadcastReceiver">
-            <intent-filter>
-                <action android:name="${applicationId}.event.BACKGROUND_FETCH" />
-            </intent-filter>
-        </receiver>
+        <service android:name="de.appplant.cordova.plugin.background.ForegroundService" />
     </application>
     <uses-sdk android:minSdkVersion="19" android:targetSdkVersion="28" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-feature android:name="android.hardware.location.gps" />
-    <uses-permission android:name="android.permission.WAKE_LOCK" />
-    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 </manifest>

@@ -90,9 +90,9 @@ ext {
 }
 
 // PLUGIN GRADLE EXTENSIONS START
-apply from: "../cordova-background-timer/gps-build.gradle"
 apply from: "../cordova-plugin-background-fetch/gps-build.gradle"
 apply from: "../cordova-background-geolocation-lt/gps-build.gradle"
+apply from: "../cordova-background-timer/gps-build.gradle"
 // PLUGIN GRADLE EXTENSIONS END
 
 def hasBuildExtras1 = file('build-extras.gradle').exists()

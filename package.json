@@ -11,14 +11,13 @@
   "license": "Apache-2.0",
   "dependencies": {
     "cordova-android": "^8.0.0",
-    "cordova-background-geolocation-lt": "^3.2.0",
+    "cordova-background-geolocation-lt": "git+https://github.com/transistorsoft/cordova-background-geolocation-lt.git",
     "cordova-background-timer": "git+https://github.com/dukhanov/cordova-background-timer.git",
     "cordova-bring-to-front": "git+https://github.com/markeeftb/cordova-bring-to-front.git",
     "cordova-plugin-background-fetch": "^5.5.0",
     "cordova-plugin-background-mode": "^0.7.3",
     "cordova-plugin-device": "^2.0.3",
     "cordova-plugin-geolocation": "^4.0.2",
-    "cordova-windows": "^7.0.0",
     "cordovarduino": "0.0.10"
   },
   "devDependencies": {
@@ -40,8 +39,7 @@
       }
     },
     "platforms": [
-      "android",
-      "windows"
+      "android"
     ]
   }
 }
