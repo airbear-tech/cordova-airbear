@@ -17,7 +17,7 @@
        under the License.
  */
 
-package org.camemergency.gps;
+package info.airbear.app;
 
 import android.os.Bundle;
 import org.apache.cordova.*;

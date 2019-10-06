@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<widget id="org.camemergency.gps" version="1.0.0" xmlns="http://www.w3.org/ns/widgets" xmlns:android="http://schemas.android.com/apk/res/android" xmlns:cdv="http://cordova.apache.org/ns/1.0">
+<widget id="info.airbear.app" version="1.0.0" xmlns="http://www.w3.org/ns/widgets" xmlns:android="http://schemas.android.com/apk/res/android" xmlns:cdv="http://cordova.apache.org/ns/1.0">
     <feature name="BackgroundFetch">
         <param name="android-package" value="com.transistorsoft.cordova.backgroundfetch.CDVBackgroundFetch" />
     </feature>
@@ -31,9 +31,9 @@
     <feature name="bringtofront">
         <param name="android-package" value="in.lucasdup.bringtofront.BringToFront" />
     </feature>
-    <name>HelloWorld</name>
+    <name>AirBear</name>
     <description>
-        A sample Apache Cordova application that responds to the deviceready event.
+	The AirBear mobile application
     </description>
     <author email="dev@cordova.apache.org" href="http://cordova.io">
         Apache Cordova Team

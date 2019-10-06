@@ -34,11 +34,39 @@
         <meta name="msapplication-tap-highlight" content="no">
         <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width">
         <link rel="stylesheet" type="text/css" href="css/index.css">
-        <title>Hello World</title>
+        <title>Air Bear</title>
     </head>
     <body>
         <div class="app">
             <h1>Air Bear</h1>
+
+<div>
+    <input type="button" id="sampling_regular" style="margin:10px;font-size:2em;" value="Start regular sampling">    
+</div>
+<div>
+
+    <input type="button" id="sampling_node" style="margin:10px;font-size:2em;" value="Start spaced node sampling">    
+</div>
+
+<div>
+    <div id="sampling_node_active">
+        <h2 id="message_alert"></h2>
+        <div id="sampling_node_timer"></div>
+        <div id="sampling_node_content"></div>
+        <input type="button" id="sampling_node_sample" value="Start sampling...">    
+    </div>
+
+    <h2>Node sampling</h2>
+    <div id="sampling_node_parameters">
+        <div>
+            <label for="sampling_node_distance">Distance (m):</label><input class="sampling_parameters" type="text" id="sampling_node_distance" value="100">    
+        </div>
+        <div>
+            <label for="sampling_node_duration">Duration (s):</label><input class="sampling_parameters" type="text" id="sampling_node_duration" value="10">    
+        </div>        
+    </div>
+
+</div>
 
 <div id="status"></div>
 Location: <span id="location">-</span>

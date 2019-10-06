@@ -109,7 +109,9 @@ function scd30(serial, variablename)
                                       'timestamp': currenttimestamp,
                                       'co2': co2,
                                       'temperature': temperature,
-                                      'humidity': humidity
+                                      'humidity': humidity,
+                                      'latitude': 0,
+                                      'longitude': 0
                                   };
 
           // console.log(window[variablename]);

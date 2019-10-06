@@ -27,6 +27,7 @@ var outgoingDb = localforage.createInstance({ name: 'outgoingPackets' });
 var outgoingStore = new MQTTLocalForageStore(outgoingDb);
 
 var currentposition = 'undefined';
+var lastposition = 'undefined';
 
 // mqttAddress = 'mqtt://test.mosquitto.org:8080';
 
@@ -158,6 +159,7 @@ var app = {
             outputDebug('[location] ' + JSON.stringify(location));
             console.log(location);
             currentposition = {'latitude': location.coords.latitude, 'longitude': location.coords.longitude};
+            if (lastposition == 'undefined') lastposition = {'latitude': currentposition.latitude, 'longitude': currentposition.longitude};
             showCurrentPosition('bkgndgeo_onlocation');
         });
 
@@ -165,6 +167,7 @@ var app = {
             showStatus("BKGNDGEO: onMotionChange")
             outputDebug('[motionchange] ' + JSON.stringify(event));
             currentposition = {'latitude': event.location.coords.latitude, 'longitude': event.location.coords.longitude};
+            if (lastposition == 'undefined') lastposition = {'latitude': currentposition.latitude, 'longitude': currentposition.longitude};
             showCurrentPosition('bkgndgeo_onmotionchange');
         });
 
@@ -200,8 +203,6 @@ var app = {
             }
         });
 
-        setInterval(timerLog, 5000);
-
     },
 
     // Update DOM on a Received Event
@@ -216,6 +217,90 @@ var app = {
         console.log('Received Event: ' + id);
     }
 };
+
+var bSamplingRegular = false;
+var bSamplingNode = false;
+var nSamplingRegularTimer = 0;
+var nSamplingNodeTimer = 0;
+var nSamplingNodeSampleCurrentTimer = 0;
+
+function setSamplingRegular(samplingregular_value)
+{
+    console.log("toggleSamplingRegular", samplingregular_value);
+
+    $('#sampling_node_active').hide();
+
+    if (samplingregular_value)
+    {
+        $('#sampling_regular').attr('value', 'Stop regular sampling');
+        $('#sampling_node').attr('disabled', true);
+        $('.sampling_parameters').attr('disabled', true);
+        $('.sampling_parameters').css('background-color', 'lightgrey');
+
+        if (nSamplingRegularTimer == 0) nSamplingRegularTimer = setInterval(timerSamplingRegular, 1000);
+    }
+    else
+    {
+        $('#sampling_regular').attr('value', 'Start regular sampling');
+        $('#sampling_node').attr('disabled', false);
+        $('.sampling_parameters').attr('disabled', false);
+        $('.sampling_parameters').css('background-color', 'white');
+
+        if (nSamplingRegularTimer != 0)
+        {
+            clearInterval(nSamplingRegularTimer);
+            nSamplingRegularTimer = 0;
+        } 
+    }
+
+    bSamplingRegular = samplingregular_value;
+}
+
+function setSamplingNode(samplingnode_value)
+{
+    console.log("toggleSamplingNode", samplingnode_value);
+
+    $('#sampling_node_active').hide();
+
+    if (samplingnode_value)
+    {
+        $('#sampling_node').attr('value', 'Stop spaced node sampling');
+        $('#sampling_regular').attr('disabled', true);
+        $('.sampling_parameters').attr('disabled', true);
+        $('.sampling_parameters').css('background-color', 'lightgrey');
+
+        samplingNodeStart();
+    }
+    else
+    {
+        $('#sampling_node').attr('value', 'Start spaced node sampling');
+        $('#sampling_regular').attr('disabled', false);
+        $('.sampling_parameters').attr('disabled', false);
+        $('.sampling_parameters').css('background-color', 'white');
+
+        if (nSamplingNodeTimer != 0)
+        {
+            clearInterval(nSamplingNodeTimer);
+            nSamplingNodeTimer = 0;
+        } 
+
+    }
+
+    bSamplingNode = samplingnode_value;
+
+}
+
+$(document).ready(function()
+{
+    $('#sampling_regular').on('click', function(){setSamplingRegular(!bSamplingRegular);});
+    $('#sampling_node').on('click', function(){setSamplingNode(!bSamplingNode);});
+    $('#sampling_node_sample').on('click', function(){timerSampleNodeSampleCurrentTimerStart();});
+
+    $('#sampling_node_active').hide();
+
+});
+
+
 
 app.initialize();
 
@@ -234,9 +319,9 @@ function showCurrentPosition(source)
     }
 }
 
-function timerLog()
+function timerSamplingRegular()
 {
-    // console.log('timerLog');
+    console.log('timerSamplingRegular');
     // outputDebug(JSON.stringify({'type': 'timer', 'message': 'Calling timerLog'}));            
 
     localforage.length().then(function(numberOfKeys) {
@@ -249,14 +334,225 @@ function timerLog()
 
     // showCurrentPosition('timerLog');
 
-    if (currentposition !== 'undefined')
+    if ((currentposition !== 'undefined') && (sensorValue !== 'undefined'))
     {
-        publishGeoData(currentposition);
+        sensorValue.latitude = currentposition.latitude;
+        sensorValue.longitude = currentposition.longitude;
+
+        publishGeoData(sensorValue);
     }
 
     // navigator.geolocation.getCurrentPosition(onGeolocationSuccess, onGeoError, { enableHighAccuracy: true });
 }
 
+function getDistanceFromLatLonInKm(lat1,lon1,lat2,lon2) 
+{
+    console.log(lat1, lon1, lat2, lon2);
+    var R = 6371; // Radius of the earth in km
+    var dLat = deg2rad(lat2-lat1);  // deg2rad below
+    var dLon = deg2rad(lon2-lon1); 
+    var a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * 
+      Math.sin(dLon/2) * Math.sin(dLon/2)
+      ; 
+    var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+    var d = R * c; // Distance in km
+    return d;
+}
+  
+function deg2rad(deg) 
+{
+    return deg * (Math.PI/180)
+}
+
+currentposition = {'latitude': 0, 'longitude': 0};
+lastposition = {'latitude': currentposition.latitude, 'longitude': currentposition.longitude};
+
+nFakeDistanceTimer = 0;
+nFakeValueIncrease = 0;
+
+function fakeDistanceTimerStart()
+{
+    return;
+
+    nFakeDistanceTimer = setInterval(function() {
+        currentposition.latitude += 0.0004;
+    }, 2000);
+    
+}
+
+function fakeDistanceTimerStop()
+{
+    return;
+    
+    if (nFakeDistanceTimer != 0) clearInterval(nFakeDistanceTimer);
+    nFakeDistanceTimer = 0;
+}
+
+fakeDistanceTimerStart();
+
+function samplingNodeStart()
+{
+    console.log("Starting or sufficient distance travelled - get new node data");
+    $('#message_alert').html("STOP MOVING! SAMPLE CURRENT POSITION");
+    $('#sampling_node_active').show();
+
+    if (nSamplingNodeTimer != 0)
+    {
+        clearInterval(nSamplingNodeTimer);
+        nSamplingNodeTimer = 0;
+    } 
+
+    fakeDistanceTimerStop();
+}
+
+function timerSamplingNode()
+{
+    console.log('timerSamplingNode');
+
+    if (currentposition !== 'undefined')
+    {
+        if (lastposition !== 'undefined')
+        {
+            var distancefromlast = 1000 * getDistanceFromLatLonInKm(currentposition.latitude, currentposition.longitude, lastposition.latitude, lastposition.longitude);
+            var distanceminimum = $('#sampling_node_distance').val();
+            
+            console.log("Distance from last position", distancefromlast);
+
+            if (distancefromlast >= distanceminimum)
+            {
+                samplingNodeStart();
+            }
+            else
+            {
+                $('#sampling_node_active').hide();
+                $('#message_alert').html("");
+            }
+        }
+    }
+
+}
+
+var timerSampleNodeSampleCurrentCountdown = 0;
+
+function timerSampleNodeSampleCurrentTimerStart()
+{
+    if (nSamplingNodeSampleCurrentTimer == 0) 
+    {
+        timerSampleNodeSampleCurrentCountdown = $('#sampling_node_duration').val();       
+        nSamplingNodeSampleCurrentTimer = setInterval(function(){timerSampleNodeSampleCurrent();}, 1000);
+        $('#sampling_node_sample').attr('disabled', true);
+    }
+}
+
+function timerSampleNodeSampleCurrentTimerStop()
+{
+    if (nSamplingNodeSampleCurrentTimer != 0)
+    {
+        clearInterval(nSamplingNodeSampleCurrentTimer);
+        nSamplingNodeSampleCurrentTimer = 0;
+    }
+}
+
+var dataSamples = [];
+
+function getAverageArray(values)
+{
+    if (values.length)
+    {
+        sum = values.reduce(function(a, b) { return a + b; });
+        return (sum / values.length);
+    }
+    else
+    {
+        return 0;
+    }
+}
+
+function timerSampleNodeSampleFinished()
+{
+    timerSampleNodeSampleCurrentTimerStop();
+    $('#sampling_node_timer').html('');        
+    $('#sampling_node_sample').attr('disabled', false);
+    $('#sampling_node_active').hide();
+    lastposition = {'latitude': currentposition.latitude, 'longitude': currentposition.longitude};
+
+    var timestamps = [];
+    var longitudes = [];
+    var latitudes = [];
+    var values = [];
+    var temperatures = [];
+    var humidities = [];
+
+    for(var i = 0; i < dataSamples.length; i++)
+    {
+        timestamps.push(dataSamples[i].timestamp);
+        longitudes.push(dataSamples[i].longitude);
+        latitudes.push(dataSamples[i].latitude);
+        values.push(dataSamples[i].co2);
+        temperatures.push(dataSamples[i].temperature);
+        humidities.push(dataSamples[i].humidity);
+    }
+
+    sensorValue =  {
+        'device': 'scd30-average',
+        'timestamp': getAverageArray(timestamps),
+        'co2': getAverageArray(values),
+        'temperature': getAverageArray(temperatures),
+        'humidity': getAverageArray(humidities),
+        'latitude': getAverageArray(latitudes),
+        'longitude': getAverageArray(longitudes),
+    };
+
+    console.log("Averaging data samples", dataSamples, sensorValue);
+
+    publishGeoData(sensorValue);
+
+    dataSamples = [];
+
+    if (nSamplingNodeTimer == 0) nSamplingNodeTimer = setInterval(timerSamplingNode, 1000);
+
+    fakeDistanceTimerStart();
+    nFakeValueIncrease += 1;
+
+}
+
+function timerSampleNodeSampleCurrent()
+{
+    console.log("timeSampleNodeSampleCurrent");
+
+    timerSampleNodeSampleCurrentCountdown -= 1;
+
+    if (timerSampleNodeSampleCurrentCountdown < 0)
+    {
+        timerSampleNodeSampleFinished();
+    }
+    else
+    {
+        // Log data anyway
+
+        // sensorValue =  {
+        //     'device': 'scd30',
+        //     'timestamp': Date.now(),
+        //     'co2': (10 * nFakeValueIncrease) + 400 + timerSampleNodeSampleCurrentCountdown,
+        //     'temperature': 27,
+        //     'humidity': 13,
+        // };
+
+        if (sensorValue !== 'undefined')
+        {
+            sensorValue.latitude = currentposition.latitude;
+            sensorValue.longitude = currentposition.longitude;
+
+            publishGeoData(sensorValue);
+
+            dataSamples.push(sensorValue);
+        }
+    
+        $('#sampling_node_timer').html(timerSampleNodeSampleCurrentCountdown.toString() + ' second(s)');        
+    } 
+}
 
 function concatTypedArrays(a, b) { // a, b TypedArray of same type
     var c = new (a.constructor)(a.length + b.length);
@@ -400,22 +696,24 @@ function processPayload(currenttimestamp, data)
         'rawGt1_0um':       rawGt1_0um,
         'rawGt2_5um':       rawGt2_5um,
         'rawGt10_0um':      rawGt10_0um,
-        'timestamp':        currenttimestamp
+        'timestamp':        currenttimestamp,
+        'latitude':         0,
+        'longitude':        0
     };
 }
 
 var onGeolocationSuccess = function(location) {
 
     currentposition = {'latitude': location.coords.latitude, 'longitude': location.coords.longitude};
+    if (lastposition == 'undefined') lastposition = {'latitude': currentposition.latitude, 'longitude': currentposition.longitude};
 
     showCurrentPosition('builtingeo');
 
-    // publishGeoData(currentposition);
 }
 
-var publishGeoData = function(latlon) {
+var publishGeoData = function(sensorValue) {
 
-    // successArray = {'type': 'geolocation', 'message': 'success', 'latitude': latlon.latitude, 'longitude': latlon.longitude};
+    // successArray = {'type': 'geolocation', 'message': 'success', 'latitude': sensorValue.latitude, 'longitude': sensorValue.longitude};
     // outputDebug(JSON.stringify(successArray));
 
     if (sensorValue === 'undefined') return;
@@ -429,8 +727,8 @@ var publishGeoData = function(latlon) {
             'sensor':'CO2',
             'value':sensorValue.co2, 
             'epoch':sensorValue.timestamp, 
-            'latitude':latlon.latitude, 
-            'longitude':latlon.longitude
+            'latitude':sensorValue.latitude, 
+            'longitude':sensorValue.longitude
         }));
     }
 
@@ -443,8 +741,8 @@ var publishGeoData = function(latlon) {
             'sensor':'Temperature',
             'value':sensorValue.temperature, 
             'epoch':sensorValue.timestamp, 
-            'latitude':latlon.latitude, 
-            'longitude':latlon.longitude
+            'latitude':sensorValue.latitude, 
+            'longitude':sensorValue.longitude
         }));
     }
 
@@ -457,8 +755,8 @@ var publishGeoData = function(latlon) {
             'sensor':'Humidity',
             'value':sensorValue.humidity, 
             'epoch':sensorValue.timestamp, 
-            'latitude':latlon.latitude, 
-            'longitude':latlon.longitude
+            'latitude':sensorValue.latitude, 
+            'longitude':sensorValue.longitude
         }));                    
     }
 
@@ -471,8 +769,8 @@ var publishGeoData = function(latlon) {
             'sensor': 'concPM1_0_CF1',
             'value':sensorValue.concPM1_0_CF1, 
             'epoch':sensorValue.timestamp, 
-            'latitude':latlon.latitude, 
-            'longitude':latlon.longitude
+            'latitude':sensorValue.latitude, 
+            'longitude':sensorValue.longitude
         }));
     }
 
@@ -485,8 +783,8 @@ var publishGeoData = function(latlon) {
             'sensor':'concPM2_5_CF1',
             'value':sensorValue.concPM2_5_CF1, 
             'epoch':sensorValue.timestamp, 
-            'latitude':latlon.latitude, 
-            'longitude':latlon.longitude
+            'latitude':sensorValue.latitude, 
+            'longitude':sensorValue.longitude
         }));
     }
 
@@ -499,8 +797,8 @@ var publishGeoData = function(latlon) {
             'sensor':'concPM10_0_CF1',
             'value':sensorValue.concPM10_0_CF1, 
             'epoch':sensorValue.timestamp, 
-            'latitude':latlon.latitude, 
-            'longitude':latlon.longitude
+            'latitude':sensorValue.latitude, 
+            'longitude':sensorValue.longitude
         }));
     }
 
@@ -513,8 +811,8 @@ var publishGeoData = function(latlon) {
             'sensor':'concPM1_0_ATM',
             'value':sensorValue.concPM1_0_ATM, 
             'epoch':sensorValue.timestamp, 
-            'latitude':latlon.latitude, 
-            'longitude':latlon.longitude
+            'latitude':sensorValue.latitude, 
+            'longitude':sensorValue.longitude
         }));
     }
 
@@ -527,8 +825,8 @@ var publishGeoData = function(latlon) {
             'sensor':'concPM2_5_ATM',
             'value':sensorValue.concPM2_5_ATM, 
             'epoch':sensorValue.timestamp, 
-            'latitude':latlon.latitude, 
-            'longitude':latlon.longitude
+            'latitude':sensorValue.latitude, 
+            'longitude':sensorValue.longitude
         }));
     }
 
@@ -541,8 +839,8 @@ var publishGeoData = function(latlon) {
             'sensor':'concPM10_0_ATM',
             'value':sensorValue.concPM10_0_ATM, 
             'epoch':sensorValue.timestamp, 
-            'latitude':latlon.latitude, 
-            'longitude':latlon.longitude
+            'latitude':sensorValue.latitude, 
+            'longitude':sensorValue.longitude
         }));
     }
 
@@ -557,8 +855,8 @@ var publishGeoData = function(latlon) {
             'sensor':'rawGt0_3um',
             'value':sensorValue.rawGt0_3um, 
             'epoch':sensorValue.timestamp, 
-            'latitude':latlon.latitude, 
-            'longitude':latlon.longitude
+            'latitude':sensorValue.latitude, 
+            'longitude':sensorValue.longitude
         }));
     }
 
@@ -571,8 +869,8 @@ var publishGeoData = function(latlon) {
             'sensor':'rawGt0_5um',
             'value':sensorValue.rawGt0_5um, 
             'epoch':sensorValue.timestamp, 
-            'latitude':latlon.latitude, 
-            'longitude':latlon.longitude
+            'latitude':sensorValue.latitude, 
+            'longitude':sensorValue.longitude
         }));
     }
 
@@ -585,8 +883,8 @@ var publishGeoData = function(latlon) {
             'sensor':'rawGt1_0um',
             'value':sensorValue.rawGt1_0um, 
             'epoch':sensorValue.timestamp, 
-            'latitude':latlon.latitude, 
-            'longitude':latlon.longitude
+            'latitude':sensorValue.latitude, 
+            'longitude':sensorValue.longitude
         }));
     }
 
@@ -599,8 +897,8 @@ var publishGeoData = function(latlon) {
             'sensor':'rawGt2_5um',
             'value':sensorValue.rawGt2_5um, 
             'epoch':sensorValue.timestamp, 
-            'latitude':latlon.latitude, 
-            'longitude':latlon.longitude
+            'latitude':sensorValue.latitude, 
+            'longitude':sensorValue.longitude
         }));
     }
 
@@ -613,8 +911,8 @@ var publishGeoData = function(latlon) {
             'sensor':'rawGt10_0um',
             'value':sensorValue.rawGt10_0um, 
             'epoch':sensorValue.timestamp, 
-            'latitude':latlon.latitude, 
-            'longitude':latlon.longitude
+            'latitude':sensorValue.latitude, 
+            'longitude':sensorValue.longitude
         }));
     }
 
