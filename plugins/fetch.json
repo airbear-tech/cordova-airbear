@@ -75,5 +75,13 @@
       "OKHTTP_VERSION": "3.12.+",
       "EVENTBUS_VERSION": "3.0.0"
     }
+  },
+  "cordova-plugin-ble": {
+    "source": {
+      "type": "registry",
+      "id": "cordova-plugin-ble"
+    },
+    "is_top_level": true,
+    "variables": {}
   }
 }

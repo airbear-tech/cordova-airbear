@@ -41,6 +41,17 @@
             <h1>Air Bear</h1>
 
 <div>
+    <select id="sensor_type">
+        <option selected value="pms7003">PM - PMS7003</option>
+        <option value="pms7003-btle">PM - PMS7003 - BTLE</option>
+        <option value="mhz19">CO2 - MH-Z19</option>
+        <option value="scd30">CO2 - SCD30</option>
+        <option value="senseair-k33">CO2 - K33</option>
+    </select>
+    <input type="button" id="sensor_control" style="margin:10px;font-size:2em;" value="Start sensor">    
+</div>
+            
+<div>
     <input type="button" id="sampling_regular" style="margin:10px;font-size:2em;" value="Start regular sampling">    
 </div>
 <div>
@@ -103,6 +114,7 @@ Persistent storage size: <span id="datastore-size">-</span>
         <script type="text/javascript" src="js/mqtt-localforage-store.min.js"></script>
         <script type="text/javascript" src="js/usbdriver-mhz19b.js"></script>        
         <script type="text/javascript" src="js/usbdriver-scd30.js"></script>        
+        <script type="text/javascript" src="js/usbdriver-senseair.js"></script>        
         <script type="text/javascript" src="js/index.js"></script>
     </body>
 </html>

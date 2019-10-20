@@ -80,6 +80,14 @@ cordova.define('cordova/plugin_list', function(require, exports, module) {
       "clobbers": [
         "plugins.bringtofront"
       ]
+    },
+    {
+      "id": "cordova-plugin-ble.BLE",
+      "file": "plugins/cordova-plugin-ble/ble.js",
+      "pluginId": "cordova-plugin-ble",
+      "clobbers": [
+        "evothings.ble"
+      ]
     }
   ];
   module.exports.metadata = {
@@ -91,6 +99,7 @@ cordova.define('cordova/plugin_list', function(require, exports, module) {
     "cordova-plugin-geolocation": "4.0.2",
     "cordova-plugin-whitelist": "1.3.4",
     "cordovarduino": "0.0.10",
-    "in.lucasdup.bringtofront": "0.0.1"
+    "in.lucasdup.bringtofront": "0.0.1",
+    "cordova-plugin-ble": "2.0.1"
   };
 });

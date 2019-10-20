@@ -16,6 +16,7 @@
     "cordova-bring-to-front": "git+https://github.com/markeeftb/cordova-bring-to-front.git",
     "cordova-plugin-background-fetch": "^5.5.0",
     "cordova-plugin-background-mode": "^0.7.3",
+    "cordova-plugin-ble": "^2.0.1",
     "cordova-plugin-device": "^2.0.3",
     "cordova-plugin-geolocation": "^4.0.2",
     "cordovarduino": "0.0.10"
@@ -36,7 +37,8 @@
         "APPCOMPAT_VERSION": "28.+",
         "OKHTTP_VERSION": "3.12.+",
         "EVENTBUS_VERSION": "3.0.0"
-      }
+      },
+      "cordova-plugin-ble": {}
     },
     "platforms": [
       "android"

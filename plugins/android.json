@@ -31,6 +31,9 @@
     },
     "in.lucasdup.bringtofront": {
       "PACKAGE_NAME": "org.camemergency.gps"
+    },
+    "cordova-plugin-ble": {
+      "PACKAGE_NAME": "info.airbear.app"
     }
   },
   "dependent_plugins": {

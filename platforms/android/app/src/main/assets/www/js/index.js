@@ -20,6 +20,7 @@
 var serialPort = new Uint8Array();
 var sensorValue = 'undefined';
 var sessiontoken = 789014;
+var device = 'undefined';
 
 var mqttClient;
 var mqttAddress = 'ws://analytics.camemergency.org:9001';
@@ -71,81 +72,6 @@ var app = {
         });
 
         cordova.plugins.backgroundMode.enable();
-
-        var errorCallback = function(message) {
-            outputDebug(JSON.stringify({'type': 'Serial port error', 'message': message}));            
-        };
-
-        // Start serial port monitoring and register callback
-        // making sure serial port doesn't 'sleepOnPause', ie. background
-
-        // Serial access for PMS7003
-
-        // serial.requestPermission(
-        //     function(successMessage) {
-        //         showStatus("Permission allowed to use serial");
-        //         serial.open(
-        //             {baudRate: 9600, sleepOnPause: false},
-        //             function(successMessage) {
-
-        //                 showStatus("Serial connection open");
-
-        //                 serial.registerReadCallback(
-        //                     function success(rawdata){
-
-        //                         var data = new Uint8Array(rawdata);
-
-        //                         processSerialPort(data);
-
-        //                     },
-        //                     errorCallback
-        //                 );
-        //             },
-        //             errorCallback
-        //         );
-        //     },
-        //     errorCallback
-        // );
-
-        // // Serial access for MH-Z19B
-
-        // serial.requestPermission(
-        //     function(successMessage) {
-        //         showStatus("Permission allowed to use serial");
-        //         serial.open(
-        //             {baudRate: 9600, sleepOnPause: false},
-        //             function(successMessage) {
-
-        //                 showStatus("Serial connection open");
-
-        //                 var co2device = new mhz19b(serial, "sensorValue");
-        //                 co2device.cordova_read();
-        //             },
-        //             errorCallback
-        //         );
-        //     },
-        //     errorCallback
-        // );
-
-        // Serial access for SCD30
-
-        serial.requestPermission(
-            function(successMessage) {
-                showStatus("Permission allowed to use serial");
-                serial.open(
-                    {baudRate: 19200, sleepOnPause: false},
-                    function(successMessage) {
-
-                        showStatus("Serial connection open");
-
-                        var co2device = new scd30(serial, "sensorValue");
-                        co2device.cordova_read();
-                    },
-                    errorCallback
-                );
-            },
-            errorCallback
-        );
 
         // Call geolocation anyway just to get at least one opening position
 
@@ -223,6 +149,7 @@ var bSamplingNode = false;
 var nSamplingRegularTimer = 0;
 var nSamplingNodeTimer = 0;
 var nSamplingNodeSampleCurrentTimer = 0;
+var bSensorRunning = false;
 
 function setSamplingRegular(samplingregular_value)
 {
@@ -290,14 +217,269 @@ function setSamplingNode(samplingnode_value)
 
 }
 
+function setSensorRunning(sensorrunning_value)
+{
+    var errorCallback = function(message) {
+        outputDebug(JSON.stringify({'type': 'Serial port error', 'message': message}));            
+    };
+
+    if (sensorrunning_value)
+    {
+        $('#sensor_control').attr('value', 'Stop sensor');
+
+        var sensor_type = $('#sensor_type')[0].selectedOptions[0].value;
+
+        // Start serial port monitoring and register callback
+        // making sure serial port doesn't 'sleepOnPause', ie. background
+
+        switch (sensor_type)
+        {
+            case "pms7003":
+
+                // Serial access for PMS7003
+
+                serial.requestPermission(
+                    function(successMessage) {
+                        showStatus("Permission allowed to use serial");
+                        serial.open(
+                            {baudRate: 9600, sleepOnPause: false},
+                            function(successMessage) {
+
+                                showStatus("Serial connection open");
+
+                                serial.registerReadCallback(
+                                    function success(rawdata){
+
+                                        var data = new Uint8Array(rawdata);
+
+                                        processSerialPort(data);
+
+                                    },
+                                    errorCallback
+                                );
+                            },
+                            errorCallback
+                        );
+                    },
+                    errorCallback
+                );
+    
+                break;
+
+            case "pms7003-btle":
+
+                var Sensor_SERVICE = '0000FFE0-0000-1000-8000-00805f9b34fb'
+                var Sensor_CONFIG = '0000FFE1-0000-1000-8000-00805f9b34fb'
+                var Sensor_DATA = '0000FFE1-0000-1000-8000-00805f9b34fb'
+
+                console.log('Start scanning')
+
+                // Start scanning. Two callback functions are specified.
+                evothings.ble.startScan(
+                    onDeviceFound,
+                    onScanError)
+
+                // This function is called when a device is detected, here
+                // we check if we found the device we are looking for.
+                function onDeviceFound(newdevice)
+                {
+                    device = newdevice;
+
+                    console.log('Found device: ' + device.advertisementData.kCBAdvDataLocalName)
+
+                    if (device.advertisementData.kCBAdvDataLocalName == 'HC-08')
+                    {
+                        console.log('Found HC-08!')
+
+                        // Stop scanning.
+                        evothings.ble.stopScan()
+
+                        // Connect.
+                        connectToDevice(device)
+                    }
+                }
+
+                // Function called when a scan error occurs.
+                function onScanError(error)
+                {
+                    console.log('Scan error: ' + error)
+                }
+
+                function connectToDevice(device)
+                {
+                    evothings.ble.connectToDevice(
+                        device,
+                        onConnected,
+                        onDisconnected,
+                        onConnectError)
+
+                    function onConnected(device)
+                    {
+                        console.log('Connected to device')
+
+                        // Enable notifications for Sensor.
+                        enableSensorNotifications(device)
+                    }
+
+                    // Function called if the device disconnects.
+                    function onDisconnected(error)
+                    {
+                        console.log('Device disconnected')
+                    }
+
+                    // Function called when a connect error occurs.
+                    function onConnectError(error)
+                    {
+                        console.log('Connect error: ' + error)
+                    }
+                }
+
+                function enableSensorNotifications(device)
+                {
+                    // Get Sensor service and characteristics.
+                    var service = evothings.ble.getService(device, Sensor_SERVICE)
+                    var configCharacteristic = evothings.ble.getCharacteristic(service, Sensor_CONFIG)
+                    var dataCharacteristic = evothings.ble.getCharacteristic(service, Sensor_DATA)
+
+                    // Turn Sensor ON.
+                    evothings.ble.writeCharacteristic(
+                        device,
+                        configCharacteristic,
+                        new Uint8Array([1]),
+                        onSensorActivated,
+                        onSensorActivatedError)
+
+                    function onSensorActivated()
+                    {
+                        console.log('Sensor is ON')
+
+                        // Enable notifications from the Sensor.
+                        evothings.ble.enableNotification(
+                            device,
+                            dataCharacteristic,
+                            onSensorNotification,
+                            onSensorNotificationError)
+                    }
+
+                    function onSensorActivatedError(error)
+                    {
+                        console.log('Sensor activate error: ' + error)
+                    }
+
+                    // Called repeatedly until disableNotification is called.
+                    function onSensorNotification(rawdata)
+                    {
+                        var data = new Uint8Array(rawdata);
+
+                        processSerialPort(data);
+                    }
+
+                    function onSensorNotificationError(error)
+                    {
+                        console.log('Sensor notification error: ' + error)
+                    }
+                }
+
+                break;
+
+            case "mhz19":
+
+                // Serial access for MH-Z19B
+
+                serial.requestPermission(
+                    function(successMessage) {
+                        showStatus("Permission allowed to use serial");
+                        serial.open(
+                            {baudRate: 9600, sleepOnPause: false},
+                            function(successMessage) {
+
+                                showStatus("Serial connection open");
+
+                                var co2device = new mhz19b(serial, "sensorValue");
+                                co2device.cordova_read();
+                            },
+                            errorCallback
+                        );
+                    },
+                    errorCallback
+                );
+
+                break;
+
+            case "scd30":
+
+                // Serial access for SCD30
+
+                serial.requestPermission(
+                    function(successMessage) {
+                        showStatus("Permission allowed to use serial");
+                        serial.open(
+                            {baudRate: 19200, sleepOnPause: false},
+                            function(successMessage) {
+
+                                showStatus("Serial connection open");
+
+                                var co2device = new scd30(serial, "sensorValue");
+                                co2device.cordova_read();
+                            },
+                            errorCallback
+                        );
+                    },
+                    errorCallback
+                );
+
+                break;
+
+            case "senseair-s8":
+            case "senseair-k33":
+
+                // Serial access for K33
+
+                serial.requestPermission(
+                    function(successMessage) {
+                        showStatus("Permission allowed to use serial");
+                        serial.open(
+                            {baudRate: 9600, sleepOnPause: false},
+                            function(successMessage) {
+
+                                showStatus("Serial connection open");
+
+                                var co2device = new senseair(serial, "sensorValue");
+                                co2device.cordova_read();
+                            },
+                            errorCallback
+                        );
+                    },
+                    errorCallback
+                );
+
+                break;
+        }
+    }
+    else
+    {
+        if (device != 'undefined')
+        {
+            close(device);
+            device == 'undefined'; 
+        }
+        
+        $('#sensor_control').attr('value', 'Start sensor');
+
+        serial.close();        
+    }
+
+    bSensorRunning = sensorrunning_value;
+}
+
 $(document).ready(function()
 {
     $('#sampling_regular').on('click', function(){setSamplingRegular(!bSamplingRegular);});
     $('#sampling_node').on('click', function(){setSamplingNode(!bSamplingNode);});
     $('#sampling_node_sample').on('click', function(){timerSampleNodeSampleCurrentTimerStart();});
+    $('#sensor_control').on('click', function(){setSensorRunning(!bSensorRunning);});
 
     $('#sampling_node_active').hide();
-
 });
 
 
@@ -485,25 +667,41 @@ function timerSampleNodeSampleFinished()
     var temperatures = [];
     var humidities = [];
 
+    var sensor_type = $('#sensor_type')[0].selectedOptions[0].value;
+
     for(var i = 0; i < dataSamples.length; i++)
     {
         timestamps.push(dataSamples[i].timestamp);
         longitudes.push(dataSamples[i].longitude);
         latitudes.push(dataSamples[i].latitude);
-        values.push(dataSamples[i].co2);
+        if (sensor_type == "pms7003") values.push(dataSamples[i].rawGt0_3um);
+        else values.push(dataSamples[i].co2);
         temperatures.push(dataSamples[i].temperature);
         humidities.push(dataSamples[i].humidity);
     }
 
-    sensorValue =  {
-        'device': 'scd30-average',
-        'timestamp': getAverageArray(timestamps),
-        'co2': getAverageArray(values),
-        'temperature': getAverageArray(temperatures),
-        'humidity': getAverageArray(humidities),
-        'latitude': getAverageArray(latitudes),
-        'longitude': getAverageArray(longitudes),
-    };
+    if (sensor_type == "pms7003")
+    {
+        sensorValue =  {
+            'device': sensor_type + '-average',
+            'timestamp': getAverageArray(timestamps),
+            'rawGt0_3um': getAverageArray(values),
+            'latitude': getAverageArray(latitudes),
+            'longitude': getAverageArray(longitudes),
+        };
+    }
+    else
+    {
+        sensorValue =  {
+            'device': sensor_type + '-average',
+            'timestamp': getAverageArray(timestamps),
+            'co2': getAverageArray(values),
+            'temperature': getAverageArray(temperatures),
+            'humidity': getAverageArray(humidities),
+            'latitude': getAverageArray(latitudes),
+            'longitude': getAverageArray(longitudes),
+        };
+    }
 
     console.log("Averaging data samples", dataSamples, sensorValue);
 
@@ -779,7 +977,7 @@ var publishGeoData = function(sensorValue) {
         mqttClient.publish("sensor", JSON.stringify(
         {
             'token': sessiontoken,
-            'device':'pms7003', 
+            'device': sensorValue.device, 
             'sensor':'concPM2_5_CF1',
             'value':sensorValue.concPM2_5_CF1, 
             'epoch':sensorValue.timestamp, 
@@ -793,7 +991,7 @@ var publishGeoData = function(sensorValue) {
         mqttClient.publish("sensor", JSON.stringify(
         {
             'token': sessiontoken,
-            'device':'pms7003', 
+            'device': sensorValue.device, 
             'sensor':'concPM10_0_CF1',
             'value':sensorValue.concPM10_0_CF1, 
             'epoch':sensorValue.timestamp, 
@@ -807,7 +1005,7 @@ var publishGeoData = function(sensorValue) {
         mqttClient.publish("sensor", JSON.stringify(
         {
             'token': sessiontoken,
-            'device':'pms7003', 
+            'device': sensorValue.device, 
             'sensor':'concPM1_0_ATM',
             'value':sensorValue.concPM1_0_ATM, 
             'epoch':sensorValue.timestamp, 
@@ -821,7 +1019,7 @@ var publishGeoData = function(sensorValue) {
         mqttClient.publish("sensor", JSON.stringify(
         {
             'token': sessiontoken,
-            'device':'pms7003', 
+            'device': sensorValue.device, 
             'sensor':'concPM2_5_ATM',
             'value':sensorValue.concPM2_5_ATM, 
             'epoch':sensorValue.timestamp, 
@@ -835,7 +1033,7 @@ var publishGeoData = function(sensorValue) {
         mqttClient.publish("sensor", JSON.stringify(
         {
             'token': sessiontoken,
-            'device':'pms7003', 
+            'device': sensorValue.device, 
             'sensor':'concPM10_0_ATM',
             'value':sensorValue.concPM10_0_ATM, 
             'epoch':sensorValue.timestamp, 
@@ -851,7 +1049,7 @@ var publishGeoData = function(sensorValue) {
         mqttClient.publish("sensor", JSON.stringify(
         {
             'token': sessiontoken,
-            'device':'pms7003', 
+            'device': sensorValue.device, 
             'sensor':'rawGt0_3um',
             'value':sensorValue.rawGt0_3um, 
             'epoch':sensorValue.timestamp, 
@@ -865,7 +1063,7 @@ var publishGeoData = function(sensorValue) {
         mqttClient.publish("sensor", JSON.stringify(
         {
             'token': sessiontoken,
-            'device':'pms7003', 
+            'device': sensorValue.device, 
             'sensor':'rawGt0_5um',
             'value':sensorValue.rawGt0_5um, 
             'epoch':sensorValue.timestamp, 
@@ -879,7 +1077,7 @@ var publishGeoData = function(sensorValue) {
         mqttClient.publish("sensor", JSON.stringify(
         {
             'token': sessiontoken,
-            'device':'pms7003', 
+            'device': sensorValue.device, 
             'sensor':'rawGt1_0um',
             'value':sensorValue.rawGt1_0um, 
             'epoch':sensorValue.timestamp, 
@@ -893,7 +1091,7 @@ var publishGeoData = function(sensorValue) {
         mqttClient.publish("sensor", JSON.stringify(
         {
             'token': sessiontoken,
-            'device':'pms7003', 
+            'device': sensorValue.device, 
             'sensor':'rawGt2_5um',
             'value':sensorValue.rawGt2_5um, 
             'epoch':sensorValue.timestamp, 
@@ -907,7 +1105,7 @@ var publishGeoData = function(sensorValue) {
         mqttClient.publish("sensor", JSON.stringify(
         {
             'token': sessiontoken,
-            'device':'pms7003', 
+            'device': sensorValue.device, 
             'sensor':'rawGt10_0um',
             'value':sensorValue.rawGt10_0um, 
             'epoch':sensorValue.timestamp, 
@@ -943,8 +1141,8 @@ function outputDebug(logtext)
 {
     // Add timestamp to text
 
-    // console.log(logtext);
-    // return;
+    console.log(logtext);
+    return;
 
     var d = new Date();
 
